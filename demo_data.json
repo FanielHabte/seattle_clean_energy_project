@@ -1,0 +1,11 @@
+[
+  {
+	"period": "2025-09-06T14",
+	"respondent": "SRP",
+	"respondent-name": "Salt River Project Agricultural Improvement and Power District",
+	"fueltype": "BAT",
+	"type-name": "Battery storage",
+	"value": -14,
+	"value-units": "megawatthours"
+  }
+]
