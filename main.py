@@ -1,111 +1,55 @@
 import requests
-import os 
+import os
+import pandas as pd
+from dotenv import load_dotenv
+from datetime import datetime as dt
 
-start_date = "2025-10-17T00"
-end_date = "2025-10-18T00"
-api_key = "7glYQjzdiuWWQ8pCgbyWRzg8iMPtgDJyZgfcJXg4"
-url = f"https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/?frequency=hourly&data[0]=value&facets[respondent][]=SCL&start={start_date}&end={end_date}&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=10&api_key={api_key}"
+def get_max_date(csv_file):
+    df = pd.read_csv(csv_file)
+    time_format = "%Y-%m-%dT%H"
+    max_date = pd.to_datetime(df.period, format=time_format).max()
+    max_date_str = dt.strftime(max_date, time_format)
+    return max_date_str
 
-response = requests.get(url)
-json_response = response.json()
+load_dotenv()
 
-list_data = []
-for record in json_response["response"]["data"]:
-    list_data.append(record)
+file_path = "data/EIA_Data.csv"
+time_format = "%Y-%m-%dT%H"
+start_date = get_max_date(file_path)
+end_date = dt.strftime(dt.now(), format=time_format)
+api_key = os.getenv("EIA_APP_TOKEN")
+offset_value = 0
+limit = 5000
+
+url = f"https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/?frequency=hourly&data[0]=value&facets[respondent][]=SCL&start={start_date}&end={end_date}&sort[0][column]=period&sort[0][direction]=asc&offset={offset_value}&length={limit}&api_key={api_key}"
+flag = True
     
-
-# [
-#     {
-#         "period": "2025-09-07T00",
-#         "respondent": "AECI",
-#         "respondent-name": "Associated Electric Cooperative, Inc.",
-#         "fueltype": "COL",
-#         "type-name": "Coal",
-#         "value": "1614",
-#         "value-units": "megawatthours",
-#     },
-#     {
-#         "period": "2025-09-07T00",
-#         "respondent": "AECI",
-#         "respondent-name": "Associated Electric Cooperative, Inc.",
-#         "fueltype": "NG",
-#         "type-name": "Natural Gas",
-#         "value": "841",
-#         "value-units": "megawatthours",
-#     },
-#     {
-#         "period": "2025-09-07T00",
-#         "respondent": "AECI",
-#         "respondent-name": "Associated Electric Cooperative, Inc.",
-#         "fueltype": "WND",
-#         "type-name": "Wind",
-#         "value": "65",
-#         "value-units": "megawatthours",
-#     },
-#     {
-#         "period": "2025-09-07T00",
-#         "respondent": "AVA",
-#         "respondent-name": "Avista Corporation",
-#         "fueltype": "NG",
-#         "type-name": "Natural Gas",
-#         "value": "341",
-#         "value-units": "megawatthours",
-#     },
-#     {
-#         "period": "2025-09-07T00",
-#         "respondent": "AVA",
-#         "respondent-name": "Avista Corporation",
-#         "fueltype": "OTH",
-#         "type-name": "Other",
-#         "value": "118",
-#         "value-units": "megawatthours",
-#     },
-#     {
-#         "period": "2025-09-07T00",
-#         "respondent": "AVA",
-#         "respondent-name": "Avista Corporation",
-#         "fueltype": "SUN",
-#         "type-name": "Solar",
-#         "value": "2",
-#         "value-units": "megawatthours",
-#     },
-#     {
-#         "period": "2025-09-07T00",
-#         "respondent": "AVA",
-#         "respondent-name": "Avista Corporation",
-#         "fueltype": "WAT",
-#         "type-name": "Hydro",
-#         "value": "389",
-#         "value-units": "megawatthours",
-#     },
-#     {
-#         "period": "2025-09-07T00",
-#         "respondent": "AVA",
-#         "respondent-name": "Avista Corporation",
-#         "fueltype": "WND",
-#         "type-name": "Wind",
-#         "value": "171",
-#         "value-units": "megawatthours",
-#     },
-#     {
-#         "period": "2025-09-07T00",
-#         "respondent": "AVRN",
-#         "respondent-name": "Avangrid Renewables, LLC",
-#         "fueltype": "NG",
-#         "type-name": "Natural Gas",
-#         "value": "425",
-#         "value-units": "megawatthours",
-#     },
-#     {
-#         "period": "2025-09-07T00",
-#         "respondent": "AVRN",
-#         "respondent-name": "Avangrid Renewables, LLC",
-#         "fueltype": "SUN",
-#         "type-name": "Solar",
-#         "value": "0",
-#         "value-units": "megawatthours",
-#     },
-# ]
-
+try:
+    response = requests.get(url)
+    json_response = response.json()["response"]["data"]
+except requests.exceptions.HTTPError as errh:
+    print("Error: HTTP Error")
+    print(errh.args[0])
+except requests.exceptions.ReadTimeout as errrt:
+    print("Error: Time out")
+except requests.exceptions.ConnectionError as conerr:
+    print("Error: Connection")
+except requests.exceptions.RequestException as errex:
+    print("Error: Exception request")
+else:
+    df = pd.DataFrame(json_response)
+    df.period = pd.to_datetime(df.period, format=time_format)
+    max_date = pd.to_datetime(start_date, format=time_format)
+    df_to_append = df.loc[df["period"] > max_date].copy().dropna(how="all")
+    df_to_append.period = df.period.dt.strftime(time_format)
     
-print(list_data)
+if df_to_append.empty:
+    print("No new rows to append.")
+else:
+    df_to_append.to_csv(
+        file_path,
+        mode="a",
+        index=False,
+        header=False, 
+        lineterminator="\n",
+    )
