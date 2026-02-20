@@ -1,0 +1,23 @@
+databricks:
+  hostname: dbc-3fccbc40-baa2.cloud.databricks.com
+  path: /sql/1.0/warehouses/49795063a37be1c8
+  token: your_databricks_token_here
+
+energy_usage_db:
+  api_key: your_api_key_here
+  volume_path: /Volumes/workspace/energy_reporting/raw_landing_zone/raw_usa_energy_data.csv
+  local_file_path: data/reporting/reporting.csv
+  table_name: energy_reporting.raw_usa_monthly_data
+  api_url: https://api.eia.gov/v2/electricity/rto/daily-fuel-type-data/data/?frequency=daily
+  column_details: "reporting_day STRING, providers_alias STRING, provider_name STRING, provider_timezone STRING, fuel_type_alias STRING, fuel_type_name STRING, value DOUBLE, value_unit STRING, snapshot_timestamp STRING, dw_run_date STRING"
+
+ba_metadata_db:
+  api_key: your_api_key_here
+  volume_path: /Volumes/workspace/energy_reporting/raw_landing_zone/ba_metadata.csv
+  local_file_path: data/meta/ba_details_table.csv
+  table_name: energy_reporting.raw_ba_details
+  api_url: "https://openenergyhub.ornl.gov/api/explore/v2.1/catalog/datasets/control-areas/records?limit=100"
+  column_details: "id STRING, name STRING, country STRING, state STRING, city STRING, address STRING, telephone STRING, source STRING, website STRING, refresh_date STRING"
+
+file_path: 
+  json_logs: pipeline/logs/run_details.json
