@@ -35,7 +35,8 @@ def pull_daily_data():
 
         if len(json_response) == 0 or json_response is None:
             flag = False
-            raise RuntimeError("No new records found.")
+            print("No new records found.")
+            return pd.DataFrame()
 
     df = pd.DataFrame(data)
     df["snapshot_timestamp"] = generate_time_period("timestamp")
