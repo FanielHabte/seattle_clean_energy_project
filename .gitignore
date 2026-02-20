@@ -7,6 +7,10 @@ __pycache__/
 pipeline/src/config/config.yaml
 config.yaml
 
+# Large data files
+data/output/*.csv
+data/reporting/*.csv
+
 # C extensions
 *.so
 
